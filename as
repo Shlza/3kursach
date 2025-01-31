@@ -1,0 +1,38 @@
+private void ImportTours()
+{
+    var fileData = File.ReadAllLines(@"D:\dlg\test\28 WS\Материалы для импорта WorldSkills\Туры.txt"); // Путь к туры.txt в unicode
+    var images = Directory.GetFiles(@"D:\dlg\test\28 WS\Материалы для импорта WorldSkills\Туры фото"); // Путь к фото
+
+    foreach (var line in fileData)
+    {
+        var data = line.Split('\t');
+
+        var tempTour = new Tour
+        {
+            Name = data[0].Replace("\"", ""),
+            TicketCount = int.Parse(data[2]),
+            Price = decimal.Parse(data[3]),
+            IsActual = (data[4] == "0") ? false : true
+        };
+
+        foreach (var tourType in data[5].Replace("\"", "").Split(new string[] { ", "}, StringSplitOptions.RemoveEmptyEntries))
+        {
+            var currentType = ToursBaseEntities.GetContext().Type.ToList().FirstOrDefault(p => p.Name == tourType);
+            if (currentType != null)
+            {
+                tempTour.Type.Add(currentType);
+            }
+        }
+        try
+        {
+            tempTour.ImagePreview = File.ReadAllBytes(images.FirstOrDefault(p => p.Contains(tempTour.Name)));
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+
+        ToursBaseEntities.GetContext().Tour.Add(tempTour);
+        ToursBaseEntities.GetContext().SaveChanges();
+    }
+}
